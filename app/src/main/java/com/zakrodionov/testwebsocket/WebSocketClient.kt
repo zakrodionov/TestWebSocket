@@ -8,16 +8,29 @@ import android.net.ConnectivityManager
 import android.util.Log
 import kotlinx.coroutines.*
 import okhttp3.*
-import okhttp3.internal.ws.RealWebSocket
 import okio.ByteString
 import java.util.concurrent.TimeUnit
 
-class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketListener() {
+//listener, log для теста, не использовать при копипасте
+//Отображает текст в текствью
+class WebSocketClient(
+    context: Context,
+    url: String = SOCKET_URL,
+    val listener: (String) -> Unit //todo delete
+) : WebSocketListener() {
+
+    //delete on prod todo
+    private fun log(str: String) {
+        Log.d(TAG, str)
+        socketScope.launch {
+            listener.invoke(str)
+        }
+    }
 
     companion object {
         private const val SOCKET_URL = "wss://echo.websocket.org"
-        private const val REPEAT_COUNT = 20
-        private const val REPEAT_INTERVAL_MS = 1_000L
+        private const val RETRY_COUNT = 20
+        private const val RETRY_INTERVAL_MS = 1_000L
         private const val TAG = "test_web_socket"
     }
 
@@ -30,21 +43,20 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
         .build()
 
     private var job: Job = SupervisorJob()
-    private val socketScope by lazy { CoroutineScope(job + Dispatchers.Main) }
+    private val socketScope by lazy { CoroutineScope(Dispatchers.Main) }
 
     private var ws: WebSocket? = null
 
+    private var currentRetryCount = 0
     private var connecting = false
-    private var connectingAttempt = 0
-
     private var connected = false
-        set(value) {
+        set(connected) {
             connecting = false
 
-            if (value){
-                connectingAttempt = 0
+            if (connected) {
+                currentRetryCount = 0
             }
-            field = value
+            field = connected
         }
 
     init {
@@ -57,30 +69,30 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
         applicationContext?.registerReceiver(ConnectivityChangeBroadcastReceiver(), intentFilter)
     }
 
-    fun connectWithRepeat() {
+    fun connectWithRetry() {
+        currentRetryCount = 0
         job = socketScope.launch {
-            while(!connected && !connecting && connectingAttempt < REPEAT_COUNT) {
-                Log.d(TAG, "REPEAT_COUNT: $connected")
-                connectingAttempt--
+            while (!connected && !connecting && currentRetryCount <= RETRY_COUNT) {
+                log("ATTEMPT_COUNT: $currentRetryCount")
+                log("CONNECTED_STATUS: $connected")
+                currentRetryCount++
                 connectSocket()
-                delay(REPEAT_INTERVAL_MS)
+                delay(RETRY_INTERVAL_MS)
             }
         }
     }
 
     private fun connectSocket() {
         if (!connected && !connecting) {
-            ws = null
             ws = client.newWebSocket(request, this)
-            Log.d(TAG, "connectSocket: $ws")
+            log("connectSocket: $ws")
             connecting = true
         }
     }
 
     fun stopSocket() {
         job.cancel()
-        ws?.close(4999, "stop")
-        ws = null
+        ws?.close(4999, "stop") //todo code??
     }
 
     fun sendText() {
@@ -89,15 +101,15 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
 
     override fun onOpen(webSocket: WebSocket, response: Response) {
         connected = true
-        Log.d(TAG, "onOpen: $response")
+        log("onOpen: $response")
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
-        Log.d(TAG, "onMessage: $text")
+        log("onMessage: $text")
     }
 
     override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-        Log.d(TAG, "onMessage: " + bytes.hex())
+        log("onMessage: " + bytes.hex())
     }
 
     override fun onClosing(
@@ -106,7 +118,7 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
         reason: String
     ) {
         connected = false
-        Log.d(TAG, "CLOSE: $code $reason")
+        log("CLOSE: $code $reason")
     }
 
     override fun onFailure(
@@ -115,7 +127,7 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
         response: Response?
     ) {
         connected = false
-        Log.d(TAG, "onFailure: $t")
+        log("onFailure: $t")
     }
 
     private inner class ConnectivityChangeBroadcastReceiver : BroadcastReceiver() {
@@ -124,7 +136,7 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
             val isConnected = !extras.getBoolean(ConnectivityManager.EXTRA_NO_CONNECTIVITY)
 
             if (isConnected) {
-                connectWithRepeat()
+                connectWithRetry()
             }
         }
     }

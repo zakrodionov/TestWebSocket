@@ -2,7 +2,6 @@ package com.zakrodionov.testwebsocket
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import kotlinx.android.synthetic.main.activity_main.*
 
 //https://stackoverflow.com/questions/59681449/websocket-reconnecting-issue-when-wifi-turned-off-and-turned-on-again
@@ -13,14 +12,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        //val ws = WebSocketClient(this)
 
         //для теста
-        val ws = WebSocketClientTestShow(this){
+        val ws = WebSocketClient(this){
             tvTitle.text = "${tvTitle.text} \n $it \n"
         }
 
-        btnStart.setOnClickListener { ws.connectWithRepeat() }
+        btnStart.setOnClickListener { ws.connectWithRetry() }
         btnStop.setOnClickListener { ws.stopSocket() }
         btnSend.setOnClickListener { ws.sendText() }
         btnClear.setOnClickListener { tvTitle.text = "" }
