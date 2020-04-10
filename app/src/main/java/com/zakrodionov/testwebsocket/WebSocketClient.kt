@@ -86,9 +86,9 @@ class WebSocketClient(
 
     private fun connectSocket() {
         if (!connected && !connecting) {
+            connecting = true
             ws = client.newWebSocket(request, this)
             log("connectSocket: $ws")
-            connecting = true
         }
     }
 
