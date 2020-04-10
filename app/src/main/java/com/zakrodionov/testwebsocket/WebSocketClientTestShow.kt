@@ -12,7 +12,13 @@ import okhttp3.internal.ws.RealWebSocket
 import okio.ByteString
 import java.util.concurrent.TimeUnit
 
-class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketListener() {
+//Класс для теста, не использовать
+//Отображает текст в текствью
+class WebSocketClientTestShow(
+    context: Context,
+    url: String = SOCKET_URL,
+    val listener: (String) -> Unit
+) : WebSocketListener() {
 
     companion object {
         private const val SOCKET_URL = "wss://echo.websocket.org"
@@ -41,7 +47,7 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
         set(value) {
             connecting = false
 
-            if (value){
+            if (value) {
                 connectingAttempt = 0
             }
             field = value
@@ -59,7 +65,8 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
 
     fun connectWithRepeat() {
         job = socketScope.launch {
-            while(!connected && !connecting && connectingAttempt < REPEAT_COUNT) {
+            while (!connected && !connecting && connectingAttempt < REPEAT_COUNT) {
+                listener.invoke("REPEAT_COUNT: $connected")
                 Log.d(TAG, "REPEAT_COUNT: $connected")
                 connectingAttempt--
                 connectSocket()
@@ -72,7 +79,8 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
         if (!connected && !connecting) {
             ws = null
             ws = client.newWebSocket(request, this)
-            Log.d(TAG, "connectSocket: $ws")
+            listener.invoke("connectSocket: $ws")
+            Log.d(TAG,"connectSocket: $ws")
             connecting = true
         }
     }
@@ -89,15 +97,18 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
 
     override fun onOpen(webSocket: WebSocket, response: Response) {
         connected = true
-        Log.d(TAG, "onOpen: $response")
+        listener.invoke("onOpen: $response")
+        Log.d(TAG,"onOpen: $response")
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
-        Log.d(TAG, "onMessage: $text")
+        listener.invoke("onMessage: $text")
+        Log.d(TAG,"onMessage: $text")
     }
 
     override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-        Log.d(TAG, "onMessage: " + bytes.hex())
+        listener.invoke("onMessage: " + bytes.hex())
+        Log.d(TAG,"onMessage: " + bytes.hex())
     }
 
     override fun onClosing(
@@ -106,7 +117,8 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
         reason: String
     ) {
         connected = false
-        Log.d(TAG, "CLOSE: $code $reason")
+        listener.invoke("CLOSE: $code $reason")
+        Log.d(TAG,"CLOSE: $code $reason")
     }
 
     override fun onFailure(
@@ -115,7 +127,8 @@ class WebSocketClient(context: Context, url: String = SOCKET_URL) : WebSocketLis
         response: Response?
     ) {
         connected = false
-        Log.d(TAG, "onFailure: $t")
+        listener.invoke("onFailure: $t")
+        Log.d(TAG,"onFailure: $t")
     }
 
     private inner class ConnectivityChangeBroadcastReceiver : BroadcastReceiver() {
