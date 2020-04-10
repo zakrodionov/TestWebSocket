@@ -17,14 +17,13 @@ class MainActivity : AppCompatActivity() {
 
         //для теста
         val ws = WebSocketClientTestShow(this){
-            runOnUiThread {
-                tvTitle.text = "${tvTitle.text} \n $it \n"
-            }
+            tvTitle.text = "${tvTitle.text} \n $it \n"
         }
 
         btnStart.setOnClickListener { ws.connectWithRepeat() }
         btnStop.setOnClickListener { ws.stopSocket() }
         btnSend.setOnClickListener { ws.sendText() }
+        btnClear.setOnClickListener { tvTitle.text = "" }
     }
 
 }

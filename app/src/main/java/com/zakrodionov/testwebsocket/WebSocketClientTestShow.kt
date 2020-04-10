@@ -36,12 +36,18 @@ class WebSocketClientTestShow(
         .build()
 
     private var job: Job = SupervisorJob()
-    private val socketScope by lazy { CoroutineScope(job + Dispatchers.Main) }
+    private val socketScope by lazy { CoroutineScope(Dispatchers.Main) }
 
     private var ws: WebSocket? = null
 
     private var connecting = false
     private var connectingAttempt = 0
+    
+    private fun runListener(str: String) {
+        socketScope.launch { 
+            listener.invoke(str)
+        }
+    }
 
     private var connected = false
         set(value) {
@@ -66,7 +72,7 @@ class WebSocketClientTestShow(
     fun connectWithRepeat() {
         job = socketScope.launch {
             while (!connected && !connecting && connectingAttempt < REPEAT_COUNT) {
-                listener.invoke("REPEAT_COUNT: $connected")
+                runListener("REPEAT_COUNT: $connected")
                 Log.d(TAG, "REPEAT_COUNT: $connected")
                 connectingAttempt--
                 connectSocket()
@@ -79,7 +85,7 @@ class WebSocketClientTestShow(
         if (!connected && !connecting) {
             ws = null
             ws = client.newWebSocket(request, this)
-            listener.invoke("connectSocket: $ws")
+            runListener("connectSocket: $ws")
             Log.d(TAG,"connectSocket: $ws")
             connecting = true
         }
@@ -97,17 +103,17 @@ class WebSocketClientTestShow(
 
     override fun onOpen(webSocket: WebSocket, response: Response) {
         connected = true
-        listener.invoke("onOpen: $response")
+        runListener("onOpen: $response")
         Log.d(TAG,"onOpen: $response")
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
-        listener.invoke("onMessage: $text")
+        runListener("onMessage: $text")
         Log.d(TAG,"onMessage: $text")
     }
 
     override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-        listener.invoke("onMessage: " + bytes.hex())
+        runListener("onMessage: " + bytes.hex())
         Log.d(TAG,"onMessage: " + bytes.hex())
     }
 
@@ -117,7 +123,7 @@ class WebSocketClientTestShow(
         reason: String
     ) {
         connected = false
-        listener.invoke("CLOSE: $code $reason")
+        runListener("CLOSE: $code $reason")
         Log.d(TAG,"CLOSE: $code $reason")
     }
 
@@ -127,7 +133,7 @@ class WebSocketClientTestShow(
         response: Response?
     ) {
         connected = false
-        listener.invoke("onFailure: $t")
+        runListener("onFailure: $t")
         Log.d(TAG,"onFailure: $t")
     }
 
