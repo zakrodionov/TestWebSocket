@@ -12,7 +12,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
         //для теста
         val ws = WebSocketClient(this){
             tvTitle.text = "${tvTitle.text} \n $it \n"
@@ -20,7 +19,7 @@ class MainActivity : AppCompatActivity() {
 
         btnStart.setOnClickListener { ws.connectWithRetry() }
         btnStop.setOnClickListener { ws.stopSocket() }
-        btnSend.setOnClickListener { ws.sendText() }
+        btnSend.setOnClickListener { ws.sendText("Hello") }
         btnClear.setOnClickListener { tvTitle.text = "" }
     }
 

@@ -33,7 +33,7 @@ class WebSocketClient(
         private const val SOCKET_URL = "wss://echo.websocket.org"
         private const val RETRY_COUNT = 20
         private const val RETRY_INTERVAL_MS = 1_000L
-        private const val TAG = "test_web_socket"
+        private const val TAG = "WebSocketClient"
     }
 
     private val client = OkHttpClient.Builder()
@@ -97,8 +97,10 @@ class WebSocketClient(
         ws?.close(4999, "stop") //todo code??
     }
 
-    fun sendText() {
-        ws?.send("Привет")
+    fun sendText(text: String?) {
+        text?.let {
+            ws?.send(it)
+        }
     }
 
     override fun onOpen(webSocket: WebSocket, response: Response) {
