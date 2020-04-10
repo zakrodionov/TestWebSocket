@@ -22,8 +22,8 @@ class WebSocketClientTestShow(
 
     companion object {
         private const val SOCKET_URL = "wss://echo.websocket.org"
-        private const val REPEAT_COUNT = 20
-        private const val REPEAT_INTERVAL_MS = 1_000L
+        private const val REPEAT_COUNT = 20//todo rename
+        private const val REPEAT_INTERVAL_MS = 1_000L//todo rename
         private const val TAG = "test_web_socket"
     }
 
@@ -40,8 +40,7 @@ class WebSocketClientTestShow(
 
     private var ws: WebSocket? = null
 
-    private var connecting = false
-    private var connectingAttempt = 0
+    private var connectingAttempt = 0 //todo rename
     
     private fun runListener(str: String) {
         socketScope.launch { 
@@ -49,14 +48,15 @@ class WebSocketClientTestShow(
         }
     }
 
+    private var connecting = false
     private var connected = false
-        set(value) {
+        set(connected) {
             connecting = false
 
-            if (value) {
+            if (connected) {
                 connectingAttempt = 0
             }
-            field = value
+            field = connected
         }
 
     init {
@@ -83,7 +83,7 @@ class WebSocketClientTestShow(
 
     private fun connectSocket() {
         if (!connected && !connecting) {
-            ws = null
+            ws = null //todo
             ws = client.newWebSocket(request, this)
             runListener("connectSocket: $ws")
             Log.d(TAG,"connectSocket: $ws")
@@ -94,7 +94,7 @@ class WebSocketClientTestShow(
     fun stopSocket() {
         job.cancel()
         ws?.close(4999, "stop")
-        ws = null
+        ws = null//todo
     }
 
     fun sendText() {
