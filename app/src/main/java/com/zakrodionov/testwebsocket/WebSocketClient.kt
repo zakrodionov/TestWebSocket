@@ -13,6 +13,8 @@ import java.util.concurrent.TimeUnit
 
 //listener, log для теста, не использовать при копипасте
 //Отображает текст в текствью
+//Можно улучшить работу с потоками, но вроде и так норм
+//удалить коммент при копипасте
 class WebSocketClient(
     context: Context,
     url: String = SOCKET_URL,
