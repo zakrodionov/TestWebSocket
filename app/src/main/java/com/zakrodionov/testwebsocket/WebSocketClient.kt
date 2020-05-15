@@ -47,17 +47,15 @@ class WebSocketClient(
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    private val connectTask = object : Runnable {
-        override fun run() {
-            while (!connected && !connecting && currentRetryCount <= RETRY_COUNT) {
-                log("ATTEMPT_COUNT: $currentRetryCount")
-                log("CONNECTED_STATUS: $connected")
-                currentRetryCount++
-                connectSocket()
-            }
-
-            mainHandler.postDelayed(this, RETRY_INTERVAL_MS)
+    private val connectTask = runnable {
+        while (!connected && !connecting && currentRetryCount <= RETRY_COUNT) {
+            log("ATTEMPT_COUNT: $currentRetryCount")
+            log("CONNECTED_STATUS: $connected")
+            currentRetryCount++
+            connectSocket()
         }
+
+        mainHandler.postDelayed(it, RETRY_INTERVAL_MS)
     }
 
     private var ws: WebSocket? = null

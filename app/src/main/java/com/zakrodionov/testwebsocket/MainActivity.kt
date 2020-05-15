@@ -24,3 +24,9 @@ class MainActivity : AppCompatActivity() {
     }
 
 }
+
+inline fun runnable(crossinline func: (Runnable) -> Unit) = object : Runnable {
+    override fun run() {
+        func.invoke(this)
+    }
+}
