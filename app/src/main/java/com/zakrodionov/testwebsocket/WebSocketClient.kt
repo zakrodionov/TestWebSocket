@@ -5,8 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.ConnectivityManager
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import kotlinx.coroutines.*
 import okhttp3.*
 import okio.ByteString
 import java.util.concurrent.TimeUnit
@@ -24,7 +25,7 @@ class WebSocketClient(
     //delete on prod todo
     private fun log(str: String) {
         Log.d(TAG, str)
-        socketScope.launch {
+        mainHandler.post {
             listener.invoke(str)
         }
     }
@@ -44,8 +45,20 @@ class WebSocketClient(
         .url(url)
         .build()
 
-    private var job: Job = SupervisorJob()
-    private val socketScope by lazy { CoroutineScope(Dispatchers.Main) }
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private val connectTask = object : Runnable {
+        override fun run() {
+            while (!connected && !connecting && currentRetryCount <= RETRY_COUNT) {
+                log("ATTEMPT_COUNT: $currentRetryCount")
+                log("CONNECTED_STATUS: $connected")
+                currentRetryCount++
+                connectSocket()
+            }
+
+            mainHandler.postDelayed(this, RETRY_INTERVAL_MS)
+        }
+    }
 
     private var ws: WebSocket? = null
 
@@ -73,15 +86,7 @@ class WebSocketClient(
 
     fun connectWithRetry() {
         currentRetryCount = 0
-        job = socketScope.launch {
-            while (!connected && !connecting && currentRetryCount <= RETRY_COUNT) {
-                log("ATTEMPT_COUNT: $currentRetryCount")
-                log("CONNECTED_STATUS: $connected")
-                currentRetryCount++
-                connectSocket()
-                delay(RETRY_INTERVAL_MS)
-            }
-        }
+        mainHandler.post(connectTask)
     }
 
     private fun connectSocket() {
@@ -93,7 +98,7 @@ class WebSocketClient(
     }
 
     fun stopSocket() {
-        job.cancel()
+        mainHandler.removeCallbacks(connectTask)
         ws?.close(4999, "stop") //todo code??
     }
 
