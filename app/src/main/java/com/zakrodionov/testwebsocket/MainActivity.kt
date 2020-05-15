@@ -1,7 +1,8 @@
 package com.zakrodionov.testwebsocket
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 
 //https://stackoverflow.com/questions/59681449/websocket-reconnecting-issue-when-wifi-turned-off-and-turned-on-again
@@ -13,7 +14,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         //для теста
-        val ws = WebSocketClient(this){
+        val ws = WebSocketClient(this) {
             tvTitle.text = "${tvTitle.text} \n $it \n"
         }
 
@@ -30,3 +31,8 @@ inline fun runnable(crossinline func: (Runnable) -> Unit) = object : Runnable {
         func.invoke(this)
     }
 }
+
+inline fun Handler.postDelay(
+    delayMillis: Long,
+    crossinline func: () -> Unit
+) = postDelayed({ func.invoke() }, delayMillis)
